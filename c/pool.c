@@ -54,11 +54,11 @@ void clienterror(const int fd, const char *cause, const char *errnum,
    char buf[MAXLINE], body[MAXBUF];
 
    /* Build the HTTP response body */
-   sprintf(body, "<html><title>Simple Web server Error</title>");
+   sprintf(body, "<html><title>Simple Web Server Error</title>");
    sprintf(body, "%s<body bgcolor=""ffffff"">\r\n", body);
    sprintf(body, "%s%s: %s\r\n", body, errnum, shortmsg);
    sprintf(body, "%s<p>%s: %s</p>\r\n", body, longmsg, cause);
-   sprintf(body, "%s<hr><em>The Simple Web server</em>\r\n", body);
+   sprintf(body, "%s<hr><em>The Simple Web Server</em>\r\n", body);
 
    /* Print the HTTP response */
    sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
@@ -76,7 +76,7 @@ void clientsuccess(const int fd, const char *filename, const char *c, const int 
    /* Send response headers to client */
    file_manager_get_filetype(filename, filetype);
    sprintf(buf, "HTTP/1.0 200 OK\r\n");
-   sprintf(buf, "%sServer: Tiny Web Server\r\n", buf);
+   sprintf(buf, "%sServer: Simple Web Server\r\n", buf);
    sprintf(buf, "%sContent-length: %d\r\n", buf, length);
    sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, filetype);
    write_complete(fd, buf, strlen(buf));
