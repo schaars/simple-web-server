@@ -2,6 +2,16 @@ simple-web-server
 =================
 
 A simple web-server, to play with the Rust programming language
+The goal is not performance, but rather discovering the language and building a simple distributed system. There exists a lot of work on how to improve the performance of servers (e.g., http://en.wikipedia.org/wiki/C10k_problem).
+The C server serves as a reference implementation: the Rust server must have the same functionalities.
+
+
+Rust implementation
+===================
+
+Work in progress...
+
+The design should be similar to the C implementation, but in Rust style.
 
 
 C implementation
@@ -26,14 +36,6 @@ To compile the server:
  $ cd c/
 
  $ make
-
-
-Rust implementation
-===================
-
-Work in progress...
-
-The design should be similar, but in Rust style.
 
 
 How to use the server
@@ -63,11 +65,6 @@ Or using curl:
 
   $ curl -0 http://server_ip:server_port/test.txt
 
-You can also use your favorite web browser, but make sure to send HTTP/1.0 requests, otherwise you will get a 505 HTTP version not supported error. For instance, in Firefox, you have 
-
-
-Future work
-===========
-
--We can improve the performance of the server by caching the files in memory.
+You can also use your favorite web browser, but make sure to send HTTP/1.0 requests, otherwise you will get a "505 HTTP version not supported" error.
+For instance, in Firefox, enter *about:config* in the address box, search for the entry *network.http.version*, modify its value to *1.0*, and restart Firefox.
 
