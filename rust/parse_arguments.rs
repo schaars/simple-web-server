@@ -4,12 +4,16 @@
 extern mod std;
 use std::getopts::*;
 
+fn print_usage(program: ~str) {
+   fail fmt!("Usage: %s -p port -s pool_size -d web_dir", program);
+}
+
 // My personal version of the parsing of arguments. We iterate over
 // args to find the needed ones.
 fn parse_arguments_with_iteration(args: ~[~str]) -> (int, int, ~str) {
    let mut port: int = -1;
    let mut pool_size: int = -1;
-   let mut web_dir: ~str = ~".";
+   let mut web_dir: ~str = ~"";
    let mut i = 1;
 
    while i<args.len() {
@@ -20,6 +24,11 @@ fn parse_arguments_with_iteration(args: ~[~str]) -> (int, int, ~str) {
          _ => io::println(fmt!("Argument %s is unknown", args[i]))
       }
       i+=1;
+   }
+
+   if port == -1 || pool_size == -1 || web_dir == ~"" {
+      io::println("Bad arguments values: ");
+      print_usage(copy args[0]);
    }
 
    (port, pool_size, web_dir)
@@ -40,14 +49,19 @@ fn parse_arguments_with_getopts(args: ~[~str]) -> (int, int, ~str) {
    let pool_size = int::from_str(opt_str(&matches, "s")).get();
    let web_dir = opt_str(&matches, "d");
 
+   if port == -1 || pool_size == -1 || web_dir == ~"" {
+      io::println("Bad arguments values: ");
+      print_usage(copy args[0]);
+   }
+
    (port, pool_size, web_dir)
 }
 
 fn main()  {
    let args : ~[~str] = os::args();
    if (args.len() != 7) {
-      io::println(fmt!("Usage: %s -p port -s pool_size -d web_dir", args[0]));
-      return;
+      io::print("Bad length: ");
+      print_usage(copy args[0]);
    }
 
    //let (port, pool_size, web_dir) = parse_arguments_with_iteration(args);
