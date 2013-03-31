@@ -20,6 +20,7 @@ The source code is organized in the following files:
 
 * parse_arguments.rs: a simple test on how to get and parse the command line arguments.
 * read_file.rs: a simple test on how to read a file.
+* echo_server.rs: a simple echo server in TCP.
 
 
 C implementation
