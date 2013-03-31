@@ -9,14 +9,17 @@ The C server serves as a reference implementation: the Rust server must have the
 Rust implementation
 -------------------
 
-Work in progress...  
-The design should be similar to the C implementation, but in Rust style.
+The Rust implementation is located in the *rust/* directory. 
+The source code is organized in the following files:
+
+* parse_arguments.rs: a simple test on how to get and parse the command line arguments.
+* read_file.rs: a simple test on how to read a file.
 
 
 C implementation
 ----------------
 
-The C implementation is located in the *c/* directory  
+The C implementation is located in the *c/* directory. 
 The source code is organized in the following files:  
 
 * main.c: entry point. The piece of code which accepts new connections is located in this file.

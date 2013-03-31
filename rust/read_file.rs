@@ -33,7 +33,6 @@ fn read_file_lines(path: ~str) -> ~str {
    content
 }
 
-
 fn main() {
    let filename = ~"read_file.rs";
    //let content = read_file_whole(copy filename);
