@@ -10,6 +10,11 @@ Rust implementation
 -------------------
 
 The Rust implementation is located in the *rust/* directory. 
+It has been successfully compiled and used with version 0.5 of the language:
+    $ rustc --version
+    rustc 0.5
+    host: x86_64-unknown-linux-gnu
+
 The source code is organized in the following files:
 
 * parse_arguments.rs: a simple test on how to get and parse the command line arguments.
