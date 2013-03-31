@@ -67,7 +67,6 @@ fn main()  {
    //let (port, pool_size, web_dir) = parse_arguments_with_iteration(args);
    let (port, pool_size, web_dir) = parse_arguments_with_getopts(args);
 
-
    //to play with string concatenation
    io::println(~"port is " + int::to_str(port, 10));
    io::println(~"pool size is " + int::to_str(pool_size, 10));
