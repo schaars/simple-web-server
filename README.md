@@ -21,7 +21,9 @@ The source code is organized in the following files:
 * parse_arguments.rs: a simple test on how to get and parse the command line arguments.
 * read_file.rs: a simple test on how to read a file.
 * echo_server.rs: a simple echo server in TCP.
+* ws.rs: the simple web server
 
+For now there is only 1 task to accept client connections. Moreover, the server does not make the difference between "file not found" and "not authorized": it returns a 404 error in both cases.
 
 C implementation
 ----------------
