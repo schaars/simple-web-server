@@ -64,3 +64,5 @@ Or using curl:
 You can also use your favorite web browser, but make sure to send HTTP/1.0 requests, otherwise you will get a "505 HTTP version not supported" error.
 For instance, in Firefox, enter *about:config* in the address box, search for the entry *network.http.version*, modify its value to *1.0*, and restart Firefox.
 
+
+The *www* directory contains several example files to test the web server.
