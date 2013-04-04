@@ -193,9 +193,9 @@ fn main()  {
    let (port, pool_size, web_dir) = parse_arguments_with_getopts(args);
 
    //to play with string concatenation
-   io::println(~"port is " + uint::to_str(port));
-   io::println(~"pool size is " + uint::to_str(pool_size));
-   io::println(~"web dir is " + web_dir);
+   io::println(~"Port: " + uint::to_str(port));
+   io::println(~"Pool size: " + uint::to_str(pool_size));
+   io::println(~"Web dir: " + web_dir);
 
    //Connection information will be transmitted using this Port and Chan
    let (port_endpoint, chan_endpoint): (Port<ConnectMsg>, Chan<ConnectMsg>) = stream();
@@ -214,7 +214,7 @@ fn main()  {
    );
 
    if result.is_err() {
-      fail!(fmt!("failed listen: %?", result.get_err()));
+      fail!(fmt!("Failed listen: %?", result.get_err()));
    }
 }
 
