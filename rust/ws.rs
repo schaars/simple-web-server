@@ -112,16 +112,16 @@ fn clienterror(socket: &tcp::TcpSocket, cause: &str, errorcode: StatusCodes::Sta
       + ~"<hr><em>The Simple Web Server</em>\r\n"; 
    let header = fmt!("HTTP/1.0 %s %s\r\n", errnum, shortmsg) + ~"Content-type: text/html\r\n" + fmt!("Content-length: %u\r\n\r\n", body.len());
 
-   socket.write(str::to_bytes(header));
-   socket.write(str::to_bytes(body));
+   socket.write(header.to_bytes());
+   socket.write(body.to_bytes());
 }
 
 fn get_file_type(filename: &str) -> ~str {
-   if str::ends_with(filename, ~".html") {
+   if filename.ends_with(~".html") {
       ~"text/html"
-   } else if str::ends_with(filename, ~".gif") {
+   } else if filename.ends_with(~".gif") {
       ~"image/gif"
-   } else if str::ends_with(filename, ~".jpg") {
+   } else if filename.ends_with(~".jpg") {
       ~"image/jpeg"
    } else {
       ~"text/plain"
@@ -135,7 +135,7 @@ fn clientsuccess(socket: &tcp::TcpSocket, filename: &str, content: ~[u8]) {
       +fmt!("Content-length: %u\r\n", content.len())
       +fmt!("Content-type: %s\r\n\r\n", filetype);
 
-   socket.write(str::to_bytes(header));
+   socket.write(header.to_bytes());
    socket.write(content);
 }
 
@@ -193,8 +193,8 @@ fn main()  {
    let (port, pool_size, web_dir) = parse_arguments_with_getopts(args);
 
    //to play with string concatenation
-   io::println(~"Port: " + uint::to_str(port));
-   io::println(~"Pool size: " + uint::to_str(pool_size));
+   io::println(~"Port: " + port.to_str());
+   io::println(~"Pool size: " + pool_size.to_str());
    io::println(~"Web dir: " + web_dir);
 
    //Connection information will be transmitted using this Port and Chan
