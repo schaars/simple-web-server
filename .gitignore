@@ -1,3 +1,5 @@
 *~
 *.o
 ws
+
+/rust/ws.dSYM/

@@ -9,12 +9,38 @@ use std::net::tcp;
 use std::net::ip;
 use std::task;
 use std::uv;
-use pipes::{stream, Port, Chan};
+//use pipes::{stream, Port, Chan};
 
-type ConnectMsg = (tcp::TcpNewConnection, core::oldcomm::Chan<Option<tcp::TcpErrData>>);
+use StatusCodes::StatusCode;
+mod StatusCodes {
+   // HTTP Status code
+   pub struct StatusCode(int);
+   impl StatusCode {
+      fn shortmsg(&self) -> &'static str {
+        match **self {
+            401 => "Not authorized",
+            404 => "Not found",
+            505 => "HTTP Version Not Supported",
+            _   => {fail!(fmt!("shortmsg not implemented for error code %?", self));}
+         }
+      }
+      fn longmsg(&self) -> &'static str {
+         match **self {
+            400 => "The request is not well-formatted",
+            401 => "The file cannot be accessed",
+            404 => "The requested resource could not be found",
+            505 => "The server does not support the HTTP protocol version used in the request",
+            _   => {fail!(fmt!("longmsg not implemented for error code %?", self));}
+         }
+      }
+   }
+}
+
+// TODO: investigate core::unstable::Exclusive
+type ConnectMsg = (tcp::TcpNewConnection, core::unstable::Exclusive<core::comm::Chan<Option<tcp::TcpErrData>>>);
 
 fn print_usage(program: ~str) {
-   fail fmt!("Usage: %s -p port -s pool_size -d web_dir", program);
+   fail!(fmt!("Usage: %s -p port -s pool_size -d web_dir", program));
 }
 
 // Another version to parse the arguments, which uses getopts
@@ -26,7 +52,7 @@ fn parse_arguments_with_getopts(args: ~[~str]) -> (uint, uint, ~str) {
    ];
    let matches = match getopts(vec::tail(args), opts) {
       result::Ok(m) => { m }
-      result::Err(f) => { fail fail_str(f) }
+      result::Err(f) => {fail!(fail_str(f));}
    };
    let port = uint::from_str(opt_str(&matches, "p")).get();
    let pool_size = uint::from_str(opt_str(&matches, "s")).get();
@@ -67,14 +93,17 @@ fn read_request(socket: &tcp::TcpSocket) -> (~str, uint) {
       }
 
       let req2 = req + str::from_bytes(result.get());
-      req = move req2;
+      let req = req2;
       if str::contains(req, "\n") {
          return (req, 0);
       }
    }
 }
 
-fn clienterror(socket: &tcp::TcpSocket, cause: ~str, errnum: @str, shortmsg: @str, longmsg: @str) {
+fn clienterror(socket: &tcp::TcpSocket, cause: &str, errorcode: StatusCodes::StatusCode) {
+   let errnum = errorcode.to_str();
+   let shortmsg = errorcode.shortmsg();
+   let longmsg = errorcode.longmsg();
    io::println(fmt!("Client error: %s -> %s %s %s", cause, errnum, shortmsg, longmsg));
 
    let body = ~"<html><title>Simple Web Server Error</title><body bgcolor=\"ffffff\">\r\n"
@@ -87,7 +116,7 @@ fn clienterror(socket: &tcp::TcpSocket, cause: ~str, errnum: @str, shortmsg: @st
    socket.write(str::to_bytes(body));
 }
 
-fn get_file_type(filename: ~str) -> ~str {
+fn get_file_type(filename: &str) -> ~str {
    if str::ends_with(filename, ~".html") {
       ~"text/html"
    } else if str::ends_with(filename, ~".gif") {
@@ -99,7 +128,7 @@ fn get_file_type(filename: ~str) -> ~str {
    }
 }
 
-fn clientsuccess(socket: &tcp::TcpSocket, filename: ~str, content: ~[u8]) {
+fn clientsuccess(socket: &tcp::TcpSocket, filename: &str, content: ~[u8]) {
    let filetype = get_file_type(filename);
 
    let header = ~"HTTP/1.0 200 OK\r\nServer: Simple Web Server\r\n"
@@ -127,23 +156,23 @@ fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir: ~str) {
 
                let (request, code) = read_request(&socket);
                if code == 0 {
-                  let words = str::words(request);
+                  // FIXME: hacky
+                  let mut words = ~[];
+                  for str::each_word(request) |word| { words.push(word) }
+
                   if words.len() < 3 {
-                     clienterror(&socket, request, @"400", @"Bad request", @"The request is not well-formatted");
+                     clienterror(&socket, request, StatusCode(400));
                   } else if words[0] != ~"GET" {
-                     clienterror(&socket, request, @"501", @"Not implemented", @"The request is not implemented");
-                  } else if words[2] != ~"HTTP/1.0" {
-                     clienterror(&socket, request, @"505", @"HTTP version not supported", @"The server does not implement this version of HTTP");
+                     clienterror(&socket, request, StatusCode(501));
+                  } else if words[2] != ~"HTTP/1.1" {
+                     clienterror(&socket, request, StatusCode(505));
                   } else {
                      let (content, code) = read_file(web_dir + words[1]);
-                     if code == 200 {
-                        clientsuccess(&socket, copy words[1], content);
-                     } else if code == 404 {
-                        clienterror(&socket, copy words[1], @"404", @"Not found", @"The file cannot be found");
-                     } else if code == 401 {
-                        clienterror(&socket, copy words[1], @"401", @"Not authorized", @"The file cannot be accessed");
-                     } else {
-                        fail fmt!("Unknown error code: %d", code);
+                     match code {
+                        200 => {clientsuccess(&socket, copy words[1], content);},
+                        404 => {clienterror(&socket, copy words[1], StatusCode(404));},
+                        401 => {clienterror(&socket, copy words[1], StatusCode(401));},
+                        _   => {fail!(fmt!("Unknown error code: %d", code));}
                      }
                   }
                }
@@ -152,6 +181,7 @@ fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir: ~str) {
       }
    }
 }
+
 
 fn main()  {
    let args : ~[~str] = os::args();
@@ -163,8 +193,8 @@ fn main()  {
    let (port, pool_size, web_dir) = parse_arguments_with_getopts(args);
 
    //to play with string concatenation
-   io::println(~"port is " + uint::to_str(port, 10));
-   io::println(~"pool size is " + uint::to_str(pool_size, 10));
+   io::println(~"port is " + uint::to_str(port));
+   io::println(~"pool size is " + uint::to_str(pool_size));
    io::println(~"web dir is " + web_dir);
 
    //Connection information will be transmitted using this Port and Chan
@@ -173,7 +203,7 @@ fn main()  {
    handle_connection(~port_endpoint, web_dir);
 
    let result = tcp::listen(ip::v4::parse_addr("127.0.0.1"), port, 100, 
-         uv::global_loop::get(),
+         &uv::global_loop::get(),
          |_|{
             io::println("Server is now listening!");
          },
@@ -184,7 +214,7 @@ fn main()  {
    );
 
    if result.is_err() {
-      fail fmt!("failed listen: %?", result.get_err());
+      fail!(fmt!("failed listen: %?", result.get_err()));
    }
 }
 
