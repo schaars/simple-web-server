@@ -93,6 +93,7 @@ fn read_request(socket: &tcp::TcpSocket) -> (~str, uint) {
       }
 
       let req2 = req + str::from_bytes(result.get());
+      // TODO: needed?
       let req = req2;
       if str::contains(req, "\n") {
          return (req, 0);
@@ -164,7 +165,8 @@ fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir: ~str) {
                      clienterror(&socket, request, StatusCode(400));
                   } else if words[0] != ~"GET" {
                      clienterror(&socket, request, StatusCode(501));
-                  } else if words[2] != ~"HTTP/1.1" {
+                  // TODO: 1.1
+                  } else if words[2] != ~"HTTP/1.0" {
                      clienterror(&socket, request, StatusCode(505));
                   } else {
                      let (content, code) = read_file(web_dir + words[1]);
