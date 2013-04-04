@@ -93,6 +93,7 @@ fn read_request(socket: &tcp::TcpSocket) -> (~str, uint) {
       }
 
       let req2 = req + str::from_bytes(result.get());
+      // TODO: needed?
       let req = req2;
       if str::contains(req, "\n") {
          return (req, 0);
@@ -112,16 +113,16 @@ fn clienterror(socket: &tcp::TcpSocket, cause: &str, errorcode: StatusCodes::Sta
       + ~"<hr><em>The Simple Web Server</em>\r\n"; 
    let header = fmt!("HTTP/1.0 %s %s\r\n", errnum, shortmsg) + ~"Content-type: text/html\r\n" + fmt!("Content-length: %u\r\n\r\n", body.len());
 
-   socket.write(str::to_bytes(header));
-   socket.write(str::to_bytes(body));
+   socket.write(header.to_bytes());
+   socket.write(body.to_bytes());
 }
 
 fn get_file_type(filename: &str) -> ~str {
-   if str::ends_with(filename, ~".html") {
+   if filename.ends_with(~".html") {
       ~"text/html"
-   } else if str::ends_with(filename, ~".gif") {
+   } else if filename.ends_with(~".gif") {
       ~"image/gif"
-   } else if str::ends_with(filename, ~".jpg") {
+   } else if filename.ends_with(~".jpg") {
       ~"image/jpeg"
    } else {
       ~"text/plain"
@@ -135,7 +136,7 @@ fn clientsuccess(socket: &tcp::TcpSocket, filename: &str, content: ~[u8]) {
       +fmt!("Content-length: %u\r\n", content.len())
       +fmt!("Content-type: %s\r\n\r\n", filetype);
 
-   socket.write(str::to_bytes(header));
+   socket.write(header.to_bytes());
    socket.write(content);
 }
 
@@ -164,7 +165,8 @@ fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir: ~str) {
                      clienterror(&socket, request, StatusCode(400));
                   } else if words[0] != ~"GET" {
                      clienterror(&socket, request, StatusCode(501));
-                  } else if words[2] != ~"HTTP/1.1" {
+                  // TODO: 1.1
+                  } else if words[2] != ~"HTTP/1.0" {
                      clienterror(&socket, request, StatusCode(505));
                   } else {
                      let (content, code) = read_file(web_dir + words[1]);
@@ -193,9 +195,9 @@ fn main()  {
    let (port, pool_size, web_dir) = parse_arguments_with_getopts(args);
 
    //to play with string concatenation
-   io::println(~"port is " + uint::to_str(port));
-   io::println(~"pool size is " + uint::to_str(pool_size));
-   io::println(~"web dir is " + web_dir);
+   io::println(~"Port: " + port.to_str());
+   io::println(~"Pool size: " + pool_size.to_str());
+   io::println(~"Web dir: " + web_dir);
 
    //Connection information will be transmitted using this Port and Chan
    let (port_endpoint, chan_endpoint): (Port<ConnectMsg>, Chan<ConnectMsg>) = stream();
@@ -214,7 +216,7 @@ fn main()  {
    );
 
    if result.is_err() {
-      fail!(fmt!("failed listen: %?", result.get_err()));
+      fail!(fmt!("Failed listen: %?", result.get_err()));
    }
 }
 
