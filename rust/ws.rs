@@ -9,7 +9,6 @@ use std::net::tcp;
 use std::net::ip;
 use std::task;
 use std::uv;
-//use pipes::{stream, Port, Chan};
 
 use StatusCodes::StatusCode;
 mod StatusCodes {
@@ -92,9 +91,7 @@ fn read_request(socket: &tcp::TcpSocket) -> (~str, uint) {
          return (req, 1);
       }
 
-      let req2 = req + str::from_bytes(result.get());
-      // TODO: needed?
-      let req = req2;
+      req += str::from_bytes(result.get());
       if str::contains(req, "\n") {
          return (req, 0);
       }
@@ -105,7 +102,7 @@ fn clienterror(socket: &tcp::TcpSocket, cause: &str, errorcode: StatusCodes::Sta
    let errnum = errorcode.to_str();
    let shortmsg = errorcode.shortmsg();
    let longmsg = errorcode.longmsg();
-   io::println(fmt!("Client error: %s -> %s %s %s", cause, errnum, shortmsg, longmsg));
+   debug!(fmt!("Client error: %s -> %s %s %s", cause, errnum, shortmsg, longmsg));
 
    let body = ~"<html><title>Simple Web Server Error</title><body bgcolor=\"ffffff\">\r\n"
       + fmt!("%s: %s\r\n", errnum, shortmsg)
@@ -145,15 +142,15 @@ fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir: ~str) {
    do task::spawn{
       loop {
          let (conn, kill_ch) = port_endpoint.recv();
-         io::println("Going to accept a new connection");
+         debug!("Going to accept a new connection");
          match tcp::accept(conn) {
             result::Err(err) => {
-               io::println(fmt!("Connection error: %?", err));
+               debug!(fmt!("Connection error: %?", err));
                kill_ch.send(Some(err));
             },
             result::Ok(socket) => {
                let peer_addr: ~str = ip::format_addr(&socket.get_peer_addr());
-               io::println(fmt!("Connection accepted from %s", peer_addr));
+               debug!(fmt!("Connection accepted from %s", peer_addr));
 
                let (request, code) = read_request(&socket);
                if code == 0 {
