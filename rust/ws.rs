@@ -201,7 +201,7 @@ fn main()  {
 
    handle_connection(~port_endpoint, web_dir);
 
-   let result = tcp::listen(ip::v4::parse_addr("127.0.0.1"), port, 100, 
+   let result = tcp::listen(ip::v4::parse_addr("0.0.0.0"), port, 100, 
          &uv::global_loop::get(),
          |_|{
             io::println("Server is now listening!");
