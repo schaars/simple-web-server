@@ -7,7 +7,7 @@
 fn read_file_whole(path: ~str) -> ~str {
    let res = io::read_whole_file_str(&Path(path));
    if result::is_err(&res) {
-      fail ~"file_reader error: " + result::get_err(&res);
+      fail!(~"file_reader error: " + result::get_err(&res));
    }
    res.get()
 }
@@ -16,13 +16,13 @@ fn read_file_whole(path: ~str) -> ~str {
 fn read_file_lines(path: ~str) -> ~str {
    let res = io::file_reader(&Path(path));
    if result::is_err(&res) {
-      fail ~"file_reader error: " + result::get_err(&res);
+      fail!(~"file_reader error: " + result::get_err(&res));
    }
 
    let mut content = ~"";
    let reader = res.get();
    loop {
-      let line = (reader as io::ReaderUtil).read_line();
+      let line = (~(reader as io::ReaderUtil)).read_line();
       if reader.eof() {
          break;
       }

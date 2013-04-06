@@ -65,6 +65,6 @@ fn main() {
    );
 
    if result.is_err() {
-      fail fmt!("failed listen: %?", result.get_err());
+      fail!(fmt!("failed listen: %?", result.get_err()));
    }
 }

@@ -5,7 +5,7 @@ extern mod std;
 use std::getopts::*;
 
 fn print_usage(program: ~str) {
-   fail fmt!("Usage: %s -p port -s pool_size -d web_dir", program);
+   fail!(fmt!("Usage: %s -p port -s pool_size -d web_dir", program));
 }
 
 // My personal version of the parsing of arguments. We iterate over
@@ -43,7 +43,7 @@ fn parse_arguments_with_getopts(args: ~[~str]) -> (int, int, ~str) {
    ];
    let matches = match getopts(vec::tail(args), opts) {
       result::Ok(m) => { m }
-      result::Err(f) => { fail fail_str(f) }
+      result::Err(f) => { fail!(fail_str(f)) }
    };
    let port = int::from_str(opt_str(&matches, "p")).get();
    let pool_size = int::from_str(opt_str(&matches, "s")).get();
@@ -68,8 +68,8 @@ fn main()  {
    let (port, pool_size, web_dir) = parse_arguments_with_getopts(args);
 
    //to play with string concatenation
-   io::println(~"port is " + int::to_str(port, 10));
-   io::println(~"pool size is " + int::to_str(pool_size, 10));
+   io::println(~"port is " + int::to_str(port));
+   io::println(~"pool size is " + int::to_str(pool_size));
    io::println(~"web dir is " + web_dir);
 }
 
