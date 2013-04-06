@@ -22,7 +22,9 @@ fn read_file_lines(path: ~str) -> ~str {
    let mut content = ~"";
    let reader = res.get();
    loop {
-      let line = (~(reader as io::ReaderUtil)).read_line();
+      //FIXME: rust 0.6, this line does not compile:
+      //error: a sigil (`@`, `~`, or `&`) must be specified when casting to a trait
+      let line = (reader as io::ReaderUtil).read_line();
       if reader.eof() {
          break;
       }
