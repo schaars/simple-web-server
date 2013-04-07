@@ -112,7 +112,7 @@ void* start_thread(void *arg) {
                char *c = file_manager_get(file, &status, &length);
                if (c != NULL) {
                   clientsuccess(s, file, c, length, status);
-                  file_manager_release(file, length);
+                  file_manager_release(c, length);
                } else {
                   if (status == 404) {
                      clienterror(s, file, "404", "Not found", "The file cannot be found");
