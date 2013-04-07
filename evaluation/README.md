@@ -38,13 +38,13 @@ As the C implementation uses mmap to get the files content, we increase the maxi
     $ cat /proc/sys/vm/max_map_count 
     1000000
 
-Finally, the web server are compiled with optimizations (-O2 for C, -O for Rust) and are configured to serve 1000 files of the same size, present in the same directory. Each thread is pinned to a different core. The clients, which are curl processes, access 1 file chosen at random at a time. Each experiment last 1 minute and is run several times: the standard deviation is less than 2%.
+Finally, the web server are compiled with optimizations (-O2 for C, -O for Rust) and are configured to serve 1000 files of the same size, present in the same directory. The server pool size is 1 and each thread is pinned to a different core. The clients, which are curl processes, access 1 file chosen at random at a time. Each experiment last 1 minute and is run several times: the standard deviation is less than 2%.
 
 
 Throughput with requests of 1kiB
 --------------------------------
 
-In this section we present the performance of the two implementations. The servers pool size is 1 and the files size is 1kiB.
+In this section we present the performance of the two implementations with files of 1kiB.
 
 ![Throughput with requests of 1kiB](plot1kiB.jpeg)
 
@@ -55,18 +55,19 @@ Finally, the C implementation outerpforms the Rust implementation by a factor of
 
 One difference between both implementation is the usage of mmap to read files. We suppose that the Rust bad performance could be related to not using mmap. As a consequence we run an experiment where the Rust web server does not read files on disk. Instead, it sends a pre-allocated vector of bytes to the client. We observe a small performance increase: from 3.6kreq/s to 4kreq/s (+11%). We conclude that the bad performance of the Rust web server is not (entirely) due to how files are read.
 
-On another experiment, we deactivate TCP No delay on the C server. The peak throughput is 11.5kreq/s. We conclude the bad performance of the Rust web server is not due to the absence of TCP no delay.
+On another experiment, we deactivate TCP No delay on the C server. The peak throughput is 11.5kreq/s. We conclude the bad performance of the Rust web server is not due to the absence of TCP No delay.
 
 
 Throughput with requests of 100kiB
 --------------------------------
 
-In this section we present the performance of the two implementations. The servers pool size is 1 and the files size is 100kiB.
+In this section we present the performance of the two implementations with files of 100kiB.
 
 ![Throughput with requests of 100kiB](plot100kiB.jpeg)
 
 The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
 We observe that the performance of the Rust implementation is better than the C implementation: the peak throughputs are respectively 3.9kreq/s and 1kreq/s. This is an increase by a factor of 3.9.
+We run one experiment where each thread of the pool of threads of the C implementation calls *accept()*. We notice the peak throughput remains the same.
 
 
 Conclusions
