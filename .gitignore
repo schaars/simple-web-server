@@ -1,5 +1,5 @@
 *~
 *.o
+*.swp
 ws
-
 /rust/ws.dSYM/
