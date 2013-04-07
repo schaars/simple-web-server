@@ -71,7 +71,7 @@ We observe that the performance of the Rust implementation is better than the C 
 We run one experiment where each thread of the pool of threads of the C implementation calls *accept()*. We notice the peak throughput remains the same.
 
 We run the Linux profiler, *perf*, on both servers.
-We observe that the C server spends 45% of its cycle in the kernel function *__copy_user_nocache*. This means it spends the majority of its time copying  We run an experiment where we replace the calls to read() the file and write() to the socket by a single call to the *sendfile()* system call. We observe an important performance gain: the throughput with 256 clients is 13.4kreq/s, instead of 1kreq/s for the base C implementation or 3.8kreq/s for the Rust implementation.
+We observe that the C server spends 45% of its cycle in the kernel function *__copy_user_nocache*. This means it spends the majority of its time copying  We run experiments where we replace the calls to read() the file and write() to the socket by a single call to the *sendfile()* system call. We observe an important performance gain: the throughput with 256 clients is 13.4kreq/s, instead of 1kreq/s for the base C implementation or 3.8kreq/s for the Rust implementation. Detailed results are shown in the above figure.
 
 Note that the hot spots of the Rust server are quite different: the time is mostly spent in creating/freeing objects. Here is the top 5 of the most costly functions.
 
@@ -93,4 +93,5 @@ Interestingly, the throughput of the Rust web server, in terms of requests per s
 Acknowledgements
 ----------------
 
+We are grateful to [KrahnacK](https://github.com/KrahnacK) for the insightful comments that helped improve this document.
 The experiments presented in this document were carried out using the Grid’5000 experimental testbed, being developed under the INRIA ALADDIN development action with support from CNRS, RENATER and several Universities as well as other funding bodies (see https://www.grid5000.fr).
