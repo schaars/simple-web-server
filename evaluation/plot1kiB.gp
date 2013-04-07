@@ -1,13 +1,13 @@
 set term jpeg enhanced
-set output "plot1KiB.jpeg"
+set output "plot1kiB.jpeg"
 
 set xlabel "Number of clients"
-set ylabel "Throughput (req/s)"
+set ylabel "Throughput (kreq/s)"
 set xrange [1:224]
 set yrange [0:]
 set grid
 
-plot '-' using 1:2 title "Rust" with linespoints, '-' using 1:2 title "C" with linespoints
+plot '-' using 1:($2/1000) title "Rust" with linespoints, '-' using 1:($2/1000) title "C" with linespoints
 #nbClients  Rust
 1     207 
 16	   1465

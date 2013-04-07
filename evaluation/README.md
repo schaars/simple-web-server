@@ -6,7 +6,7 @@ In this document we present a performance analysis of the Rust and C implementat
 Experimental settings
 ---------------------
 
-We evaluate the performance of the servers on a cluster composed of 15 identical machines. These machines host two quad-core Intel Xeon E5440 clocked at 2.83GHz, 8GB of RAM and an Hitachi HDT72502 of 250GB running at 7200rpm. They are all connected via a Gigabit network. They run a Linux kernel 3.2 and embed gcc v4.4.5 and Rust v0.6. One machine acts as the server, while the other ones act as clients.
+We evaluate the performance of the servers on a cluster composed of 17 identical machines. These machines host two quad-core Intel Xeon E5440 clocked at 2.83GHz, 8GB of RAM and an Hitachi HDT72502 of 250GB running at 7200rpm. They are all connected via a Gigabit network. They run a Linux kernel 3.2 and embed gcc v4.4.5 and Rust v0.6. One machine acts as the server, while the other ones act as clients.
 
 We configure several kernel parameters to get the best performance :
 
@@ -45,17 +45,33 @@ Throughput with requests of 1kiB
 --------------------------------
 
 In this section we present the performance of the two implementations. The servers pool size is 1 and the files size is 1kiB.
-Figure ![Throughput with requests of 1kiB](plot1kiB.jpeg) shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
+
+![Throughput with requests of 1kiB](plot1kiB.jpeg)
+
+The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
 We observe that, up to 32 clients, both implementation provide the same performance.
 Moreover, the C implementation performance increases almost linearly, for a peak throughput of 12.2kreq/s, while the Rust implementation peak throughput is reached with only 48 clients, for a throughput of 3.6kreq/s.
 Finally, the C implementation outerpforms the Rust implementation by a factor of 3.4.
 
-One difference between both implementation is the usage of mmap to read files. We suppose that the Rust bad performance could be related to not using mmap. As a consequence we run an experiment where the Rust web server does not read files on disk. Instead, it sends a pre-allocated vector of bytes to the client. We observed a small performance increase: from 3.6kreq/s to 4kreq/s (+11%). We conclude that the bad performance of the web server is not (entirely) due to how files are read.
+One difference between both implementation is the usage of mmap to read files. We suppose that the Rust bad performance could be related to not using mmap. As a consequence we run an experiment where the Rust web server does not read files on disk. Instead, it sends a pre-allocated vector of bytes to the client. We observe a small performance increase: from 3.6kreq/s to 4kreq/s (+11%). We conclude that the bad performance of the Rust web server is not (entirely) due to how files are read.
+
+On another experiment, we deactivate TCP No delay on the C server. The peak throughput is 11.5kreq/s. We conclude the bad performance of the Rust web server is not due to the absence of TCP no delay.
+
+
+Throughput with requests of 100kiB
+--------------------------------
+
+In this section we present the performance of the two implementations. The servers pool size is 1 and the files size is 100kiB.
+
+![Throughput with requests of 100kiB](plot1k00iB.jpeg)
+
+The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
+We observe that the performance of the Rust implementation is better than the C implementation: the peak throughputs are respectively 3.9kreq/s and 1kreq/s. This is an increase by a factor of 3.9.
+We attribute this performance difference to the design of the C web server: there is an acceptor thread and a processing thread, which communicate via a shared queue.
 
 
 Conclusions
 -----------
 
-As we have seen, the C implementation outperforms the Rust implementation by a factor of 3.4 for files of 1kB. We suppose this performance difference is due to Rust internals (either the compiler, the event-processing loop or the tasks scheduler).
-
-We would like to have a Rust profiler in order to understand this performance problem.
+As we have seen, the C implementation outperforms the Rust implementation by a factor of 3.4 for files of 1kiB. We attribute this performance difference to Rust internals (either the compiler, the event-processing loop, or the tasks scheduler).
+However, this is not the case with files of 100kiB: this time the Rust implementation is better by a factor of 3.9. We attribute this performance difference to a bad design for the C web server.
