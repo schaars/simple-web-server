@@ -72,3 +72,10 @@ For instance, in Firefox, enter *about:config* in the address box, search for th
 
 
 The *www* directory contains several example files to test the web server.
+
+
+Evaluation
+----------
+
+We have evaluated the two implementation on a cluster of 17 machines. Details are presented [here](evaluation/README.md).
+The scripts used to run the experiments can be found in the *scripts* directory.
