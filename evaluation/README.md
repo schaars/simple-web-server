@@ -67,14 +67,26 @@ In this section we present the performance of the two implementations with files
 
 The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
 We observe that the performance of the Rust implementation is better than the C implementation: the peak throughputs are respectively 3.9kreq/s and 1kreq/s. This is an increase by a factor of 3.9.
+
 We run one experiment where each thread of the pool of threads of the C implementation calls *accept()*. We notice the peak throughput remains the same.
+
+We run the Linux profiler, *perf*, on both servers.
+We observe that the C server spends 45% of its cycle in the kernel function *__copy_user_nocache*. This means it spends the majority of its time copying  We run an experiment where we replace the calls to read() the file and write() to the socket by a single call to the *sendfile()* system call. We observe an important performance gain: the throughput with 256 clients is 13.4kreq/s, instead of 3.8kreq/s for the base C implementation or 4kreq/s for the Rust implementation.
+
+Note that the hot spots of the Rust server are quite different: the time is mostly spent in creating/freeing objects. Here is the top 5 of the most costly functions.
+
+1. free: 4.87%
+2. pthread_mutex_lock: 3.57%
+3. _int_malloc: 3.33%
+4. malloc: 3.03%
+5. _int_free: 2.55%
 
 
 Conclusions
 -----------
 
 As we have seen, the C implementation outperforms the Rust implementation by a factor of 3.4 for files of 1kiB. We attribute this performance difference to Rust internals (either the compiler, the event-processing loop, or the tasks scheduler).
-However, this is not the case with files of 100kiB: this time the Rust implementation is better by a factor of 3.9. We still need to investigate the cause of this problem.
+However, this is not the case with files of 100kiB: this time the Rust implementation is better by a factor of 3.9. This is due to a bad design in the C implementation: this implementation is 3.6 times better than the Rust implementation when it uses the *sendfile()* system call.
 Interestingly, the throughput of the Rust web server, in terms of requests per second, is the same whatever the file size, while the throughput of the C web server decreases when the file size increases.
 
 
