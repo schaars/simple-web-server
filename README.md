@@ -25,6 +25,7 @@ The source code is organized in the following files:
 
 For now there is only 1 task to accept client connections. Moreover, the server does not make the difference between "file not found" and "not authorized": it returns a 404 error in both cases.
 
+
 C implementation
 ----------------
 
@@ -36,6 +37,11 @@ The source code is organized in the following files:
 * pool.[c+h]: the pool of threads, which receive client requests and handle them. The threads use the file_manager in order to get the content of the requested files.
 * file_manager.[c+h]: several functions to open and manage the server files.
 * util.h: some constants and debugging stuff.
+
+Here are some keys to improve the performance of the C web server:
+
+* use sendfile() instead of read() the file and then write() to socket;
+* there is no need for a shared queue, nor an acceptor thread: each thread of the pool threads can call accept().
 
 
 How to compile and use the server

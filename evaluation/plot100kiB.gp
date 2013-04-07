@@ -12,6 +12,7 @@ plot '-' using 1:($2/1000) title "Rust" with linespoints, '-' using 1:($2/1000) 
 #nbClients  Rust
 1	214
 16	1445
+48 3824
 64	3890
 128 3878
 e

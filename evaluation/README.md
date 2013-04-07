@@ -67,11 +67,17 @@ In this section we present the performance of the two implementations. The serve
 
 The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
 We observe that the performance of the Rust implementation is better than the C implementation: the peak throughputs are respectively 3.9kreq/s and 1kreq/s. This is an increase by a factor of 3.9.
-We attribute this performance difference to the design of the C web server: there is an acceptor thread and a processing thread, which communicate via a shared queue.
 
 
 Conclusions
 -----------
 
 As we have seen, the C implementation outperforms the Rust implementation by a factor of 3.4 for files of 1kiB. We attribute this performance difference to Rust internals (either the compiler, the event-processing loop, or the tasks scheduler).
-However, this is not the case with files of 100kiB: this time the Rust implementation is better by a factor of 3.9. We attribute this performance difference to a bad design for the C web server.
+However, this is not the case with files of 100kiB: this time the Rust implementation is better by a factor of 3.9. We still need to investigate the cause of this problem.
+Interestingly, the throughput of the Rust web server, in terms of requests per second, is the same whatever the file size, while the throughput of the C web server decreases when the file size increases.
+
+
+Acknowledgements
+----------------
+
+The experiments presented in this document were carried out using the Grid’5000 experimental testbed, being developed under the INRIA ALADDIN development action with support from CNRS, RENATER and several Universities as well as other funding bodies (see https://www.grid5000.fr).
