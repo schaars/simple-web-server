@@ -63,7 +63,7 @@ Throughput with requests of 100kiB
 
 In this section we present the performance of the two implementations. The servers pool size is 1 and the files size is 100kiB.
 
-![Throughput with requests of 100kiB](plot1k00iB.jpeg)
+![Throughput with requests of 100kiB](plot100kiB.jpeg)
 
 The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
 We observe that the performance of the Rust implementation is better than the C implementation: the peak throughputs are respectively 3.9kreq/s and 1kreq/s. This is an increase by a factor of 3.9.
