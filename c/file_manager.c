@@ -76,6 +76,44 @@ void file_manager_release(char *c, const int length) {
    munmap(c, length);
 }
 
+/*
+ * Retrieve and return the content of the file file, of size *length.
+ * On success, *status=200. Later, one must call file_manager_release()
+ * On failure, *status is set to an http code value and
+ * NULL is returned. Use for sendfile.
+ */
+int file_manager_get_sendfile(const char *file, int *status, int *length) {
+   char *path;
+   asprintf(&path, "%s%s", webdir, file);
+
+   struct stat st;
+   if (stat(path, &st) < 0) {
+      *status = 404;
+      free(path);
+      return 0;
+   }
+   *length = st.st_size;
+
+   int fd;
+   if ((fd = open(path, O_RDONLY)) == -1)
+   {
+      *status = 401;
+      free(path);
+      return 0;
+   }
+
+   free(path);
+   return fd;
+}
+
+/*
+ * Free the memory allocated when calling file_manager_get
+ * for buffer c of size length. Used with file_manager_get_sendfile.
+ */
+void file_manager_release_sendfile(int fd) {
+   close(fd);
+}
+
 
 /*
  * get_filetype - derive file type from file name

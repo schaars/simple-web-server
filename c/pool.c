@@ -1,12 +1,16 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/sendfile.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "file_manager.h"
 #include "pool.h"
 #include "util.h"
 
-static struct shared_queue *sq;
+static int listen_socket;
 
 /*
  * Read a request from socket s in buffer req of size length.
@@ -70,7 +74,7 @@ void clienterror(const int fd, const char *cause, const char *errnum,
    write_complete(fd, body, strlen(body));
 }
 
-void clientsuccess(const int fd, const char *filename, const char *c, const int length, const int status) {
+void clientsuccess(const int fd, const char *filename, const int length, const int status) {
    char filetype[MAXLINE], buf[MAXBUF];
 
    /* Send response headers to client */
@@ -80,9 +84,6 @@ void clientsuccess(const int fd, const char *filename, const char *c, const int 
    sprintf(buf, "%sContent-length: %d\r\n", buf, length);
    sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, filetype);
    write_complete(fd, buf, strlen(buf));
-
-   /* Send response body to client */
-   write_complete(fd, c, length);
 }
 
 void* start_thread(void *arg) {
@@ -92,7 +93,15 @@ void* start_thread(void *arg) {
    char version[MAXLINE];
 
    while (1) {
-      int s = shared_queue_get(sq);
+      struct sockaddr_in csin;
+      int sinsize = sizeof(csin);
+      int s = accept(listen_socket, (struct sockaddr*) &csin, (socklen_t*)&sinsize);
+      if (s == -1) {
+         perror("An invalid socket has been accepted:");
+         continue;
+      }
+
+      debug("A connection has been accepted from %s:%i", inet_ntoa(csin.sin_addr), ntohs(csin.sin_port));
 
       int r = read_request(s, request, MAXLINE);
       debug("request is %s", request);
@@ -109,49 +118,58 @@ void* start_thread(void *arg) {
                clienterror(s, version, "505", "HTTP version not supported", "The server does not implement this version of HTTP");
             } else {
                int status, length;
-               char *c = file_manager_get(file, &status, &length);
-               if (c != NULL) {
-                  clientsuccess(s, file, c, length, status);
-                  file_manager_release(c, length);
-               } else {
-                  if (status == 404) {
-                     clienterror(s, file, "404", "Not found", "The file cannot be found");
-                  } else if (status == 401) {
-                     clienterror(s, file, "401", "Not authorized", "The file cannot be accessed");
+#if USE_SENDFILE
+               int fd = file_manager_get_sendfile(file, &status, &length);
+               if (fd > 0) {
+                  clientsuccess(s, file, length, status);
+                  sendfile(s, fd, NULL, length);
+                  file_manager_release_sendfile(fd);
+#else
+                  char *c = file_manager_get(file, &status, &length);
+                  if (c != NULL) {
+                     clientsuccess(s, file, length, status);
+                     write_complete(s, c, length);
+                     file_manager_release(c, length);
+#endif
                   } else {
-                     die("Internal error: unknown status %d", status);
+                     if (status == 404) {
+                        clienterror(s, file, "404", "Not found", "The file cannot be found");
+                     } else if (status == 401) {
+                        clienterror(s, file, "401", "Not authorized", "The file cannot be accessed");
+                     } else {
+                        die("Internal error: unknown status %d", status);
+                     }
                   }
                }
             }
+         } else {
+            clienterror(s, request, "400", "Bad request", "The request is not well-formatted");
          }
-      } else {
-         clienterror(s, request, "400", "Bad request", "The request is not well-formatted");
-      }
 
-      close(s);
-   }
-}
-
-/*
- * Create the pool of pool_size threads and launch the threads.
- * These threads will call the file_manager to deliver files
- * and listen to clients requests from the shared_queue *shq.
- */
-void create_pool(const int pool_size, struct shared_queue *shq) {
-   int i;
-   sq = shq; 
-
-   for (i=0; i<pool_size; i++) {
-      pthread_t thread;
-      int rc = pthread_create(&thread, NULL, start_thread, NULL);
-      if (rc) {
-         die("Failed to create the thread %d", i);
+         close(s);
       }
    }
-}
 
-/*
- * Delete the pool of threads and free the associated memory
- */
-void delete_pool(void) {
-}
+   /*
+    * Create the pool of pool_size threads and launch the threads.
+    * These threads will call the file_manager to deliver files
+    * and listen to clients requests from the socket ls.
+    */
+   void create_pool(const int pool_size, int ls) {
+      int i;
+
+      listen_socket = ls;
+      for (i=0; i<pool_size; i++) {
+         pthread_t thread;
+         int rc = pthread_create(&thread, NULL, start_thread, NULL);
+         if (rc) {
+            die("Failed to create the thread %d", i);
+         }
+      }
+   }
+
+   /*
+    * Delete the pool of threads and free the associated memory
+    */
+   void delete_pool(void) {
+   }

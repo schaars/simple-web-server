@@ -9,7 +9,6 @@
 #include <netinet/tcp.h>
 
 #include "file_manager.h"
-#include "shared_queue.h"
 #include "pool.h"
 #include "util.h"
 
@@ -21,7 +20,7 @@ void handle_signal(int sig) {
    }
 }
 
-void accept_connections(const int port, struct shared_queue *sq) {
+int accept_connections(const int port) {
    int bootstrap = socket(AF_INET, SOCK_STREAM, 0);
    if (bootstrap == -1) {
       die("Error while creating the socket");
@@ -40,25 +39,12 @@ void accept_connections(const int port, struct shared_queue *sq) {
       die("Cannot bind socket!");
    }
 
-   if (listen(bootstrap, 50) == -1) {
+   if (listen(bootstrap, 100) == -1) {
       die("Cannot listen on socket!");
    }
 
    debug("Server ready to listen to incoming connections on port %d", port);
-
-   while (1) {
-      struct sockaddr_in csin;
-      int sinsize = sizeof(csin);
-      int s = accept(bootstrap, (struct sockaddr*) &csin, (socklen_t*)&sinsize);
-      if (s == -1) {
-         perror("An invalid socket has been accepted:");
-         continue;
-      }
-
-      debug("A connection has been accepted from %s:%i", inet_ntoa(csin.sin_addr), ntohs(csin.sin_port));
-
-      shared_queue_add(s, sq);
-   }
+   return bootstrap;
 }
 
 int main(int argc, char **argv) {
@@ -90,13 +76,15 @@ int main(int argc, char **argv) {
    signal(SIGINT, handle_signal);
 
    create_file_manager(web_dir);
-   struct shared_queue *sq = create_shared_queue(10);
-   create_pool(pool_size, sq);
-   accept_connections(port, sq);
+   int bootstrap_s = accept_connections(port);
+   create_pool(pool_size, bootstrap_s);
+
+   while (1) {
+      sleep(10);
+   }
 
    delete_pool();
    delete_file_manager();
-   delete_shared_queue(sq);
    free(web_dir);
 
    return 0;

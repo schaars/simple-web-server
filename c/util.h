@@ -7,6 +7,8 @@
 
 #define DEBUG 0
 
+#define USE_SENDFILE 0
+
 #if DEBUG
 #define debug(msg, args...) \
    do {                         \

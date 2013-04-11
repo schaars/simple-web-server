@@ -27,6 +27,20 @@ char* file_manager_get(const char *file, int *status, int *length);
 void file_manager_release(char *c, const int length);
 
 /*
+ * Retrieve and return the content of the file file, of size *length.
+ * On success, *status=200. Later, one must call file_manager_release()
+ * On failure, *status is set to an http code value and
+ * NULL is returned. Use for sendfile.
+ */
+int file_manager_get_sendfile(const char *file, int *status, int *length);
+
+/*
+ * Free the memory allocated when calling file_manager_get
+ * for buffer c of size length. Used with file_manager_get_sendfile.
+ */
+void file_manager_release_sendfile(int fd);
+
+/*
  * get_filetype - derive file type from file name
  */
 void file_manager_get_filetype(const char *filename, char *filetype);
