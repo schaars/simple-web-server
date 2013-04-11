@@ -19,7 +19,7 @@ echo "Starting server on $SERVER:$SERVERPORT"
 # C VERSION:
 ssh $SERVER "cd simple-web-server/c; pkill ws; sleep 2; ./ws -p $SERVERPORT -s 1 -d ../www" &
 sleep 2
-ssh $SERVER "perl tasksetall.pl"
+ssh $SERVER "cd simple-web-server/scripts; perl tasksetall.pl"
 ssh $SERVER "sar -P ALL 1 1000" &> /tmp/server.sar.out &
 
 for node in $NODES; do
@@ -30,7 +30,7 @@ rm /tmp/client.*
 n=0
 for node in $NODES; do
    echo Starting injector on $node
-   ssh -n $node "cd simple-web-server; pkill run_injector; ./run_injector.sh $SERVER $SERVERPORT $NBFILES 1 $DURATION" 2>&1 | tee /tmp/client.${node}.out &
+   ssh -n $node "cd simple-web-server/scripts; pkill run_injector; ./run_injector.sh $SERVER $SERVERPORT $NBFILES 1 $DURATION" 2>&1 | tee /tmp/client.${node}.out &
    n=$(($n+1))
    if [ $n -ge $NBMACHINES ]; then
       break
