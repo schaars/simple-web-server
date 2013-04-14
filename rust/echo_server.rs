@@ -1,4 +1,4 @@
-/* 
+/*
  * A simple echo server in TCP: accepts connections, read and write lines
  * Useful links:
  *   -https://github.com/mozilla/rust/blob/incoming/src/libstd/flatpipes.rs#L772
@@ -12,14 +12,14 @@ use std::net::tcp;
 use std::net::ip;
 use std::task;
 use std::uv;
-use pipes::{stream, Port, Chan};
+use core::comm::{stream, Port, SharedChan};
 
-type ConnectMsg = (tcp::TcpNewConnection, core::oldcomm::Chan<Option<tcp::TcpErrData>>);
+type ConnectMsg = (tcp::TcpNewConnection, SharedChan<Option<tcp::TcpErrData>>);
 
 fn main() {
    //Connection information will be transmitted using this Port and Chan
    let (port, chan): (Port<ConnectMsg>, Chan<ConnectMsg>) = stream();
-        
+
    // this is the task which accepts new connections
    do task::spawn {
       loop {
@@ -39,7 +39,7 @@ fn main() {
                   if result.is_err() {
                      break;
                   }
-                  
+
                   let c = result.get();
                   io::println(fmt!("%?", c));
                   let result = socket.write(c);
@@ -53,8 +53,8 @@ fn main() {
       }
    }
 
-   let result = tcp::listen(ip::v4::parse_addr("127.0.0.1"), 4000, 100, 
-         uv::global_loop::get(),
+   let result = tcp::listen(ip::v4::parse_addr("127.0.0.1"), 4000, 100,
+         &uv::global_loop::get(),
          |_|{
             io::println("Server is now listening!");
          },
