@@ -51,11 +51,11 @@ In this section we present the performance of the two implementations with files
 The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
 We observe that, up to 32 clients, both implementation provide the same performance.
 Moreover, the C implementation performance increases almost linearly, for a peak throughput of 12.2kreq/s, while the Rust implementation peak throughput is reached with only 48 clients, for a throughput of 3.6kreq/s.
-Finally, the C implementation outerpforms the Rust implementation by a factor of 3.4.
+Finally, the C implementation outperforms the Rust implementation by a factor of 3.4.
 
 One difference between both implementation is the usage of mmap to read files. We suppose that the Rust bad performance could be related to not using mmap. As a consequence we run an experiment where the Rust web server does not read files on disk. Instead, it sends a pre-allocated vector of bytes to the client. We observe a small performance increase: from 3.6kreq/s to 4kreq/s (+11%). We conclude that the bad performance of the Rust web server is not (entirely) due to how files are read.
 
-On another experiment, we deactivate TCP No delay on the C server. The peak throughput is 11.5kreq/s. We conclude the bad performance of the Rust web server is not due to the absence of TCP No delay.
+On another experiment, we deactivate TCP No delay on the C server. The peak throughput is 11.5kreq/s. We conclude the bad performance of the Rust web server is not due to the absence of TCP No delay. We would like to look at Rust's internals in order to understand this performance difference.
 
 
 Throughput with requests of 100kiB
@@ -65,15 +65,15 @@ In this section we present the performance of the two implementations with files
 
 ![Throughput with requests of 100kiB](plot100kiB.jpeg)
 
-The following figure shows the throughput (in terms of served requests per second) for both implementation as a function of the number of clients.
-We observe that the performance of the Rust implementation is better than the C implementation: the peak throughputs are respectively 3.9kreq/s and 1kreq/s. This is an increase by a factor of 3.9.
-
-We run one experiment where each thread of the pool of threads of the C implementation calls *accept()*. We notice the peak throughput remains the same.
+The following figure shows the throughput (in terms of served requests per second) for both implementations as a function of the number of clients.
+We observe that, up to 16 clients, the performance of both implementations are equivalent.
+However, with more than 16 clients, the C implementation provides better performance: the maximal difference between the two is 17%, for 160 clients.
+Interestingly, the throughput of the Rust implementation becomes close to the one of the C implementation with 256 clients. We did not have additional machines to run more clients, but think that the Rust web server can provide the same throughput as the C server, i.e., 1040 req/s, with more clients.
 
 We run the Linux profiler, *perf*, on both servers.
-We observe that the C server spends 45% of its cycle in the kernel function *__copy_user_nocache*. This means it spends the majority of its time copying  We run experiments where we replace the calls to read() the file and write() to the socket by a single call to the *sendfile()* system call. We observe an important performance gain: the throughput with 256 clients is 13.4kreq/s, instead of 1kreq/s for the base C implementation or 3.8kreq/s for the Rust implementation. Detailed results are shown in the above figure.
+We observe that the C server spends 45% of its cycle in the kernel function *__copy_user_nocache*. This means it spends the majority of its time copying  We run experiments where we replace the calls to read() the file and write() to the socket by a single call to the *sendfile()* system call. As shown in the figure, *sendfile()* improves the performance by only 2.4%. Note that both C implementations use 96% of the network at their peak throughput.
 
-Note that the hot spots of the Rust server are quite different: the time is mostly spent in creating/freeing objects. Here is the top 5 of the most costly functions.
+Finally, the hot spots of the Rust server are quite different: the time is mostly spent in creating/freeing objects. Here is the top 5 of the most costly functions.
 
 1. free: 4.87%
 2. pthread_mutex_lock: 3.57%
@@ -86,8 +86,7 @@ Conclusions
 -----------
 
 As we have seen, the C implementation outperforms the Rust implementation by a factor of 3.4 for files of 1kiB. We attribute this performance difference to Rust internals (either the compiler, the event-processing loop, or the tasks scheduler).
-However, this is not the case with files of 100kiB: this time the Rust implementation is better by a factor of 3.9. This is due to a bad design in the C implementation: this implementation is 3.6 times better than the Rust implementation when it uses the *sendfile()* system call.
-Interestingly, the throughput of the Rust web server, in terms of requests per second, is the same whatever the file size, while the throughput of the C web server decreases when the file size increases.
+However, in the case of files of 100kiB, the performance difference is less than 17%. Both web server implementations use the network efficiently, roughly 96%, and can thus provide a similar throughput. 
 
 
 Acknowledgements
