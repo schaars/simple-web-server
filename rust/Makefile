@@ -18,3 +18,4 @@ echo_server: echo_server.rs
 clean:
 	-rm *~
 	-rm ws parse_arguments read_file echo_server
+	-rm -r *.dSYM
