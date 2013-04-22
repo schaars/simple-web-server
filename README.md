@@ -32,16 +32,12 @@ C implementation
 The C implementation is located in the *c/* directory. 
 The source code is organized in the following files:  
 
-* main.c: entry point. The piece of code which accepts new connections is located in this file.
-* shared_queue.[c+h]: a synchronized shared queue. It is used to send new connection file descriptors to the pool of threads.
-* pool.[c+h]: the pool of threads, which receive client requests and handle them. The threads use the file_manager in order to get the content of the requested files.
+* main.c: entry point. The main part of this file is the function *accept_connections()*, which creates the server socket.
+* pool.[c+h]: the pool of threads, which accept new connections and handle the requests. The threads use the file_manager in order to get the content of the requested files.
 * file_manager.[c+h]: several functions to open and manage the server files.
 * util.h: some constants and debugging stuff.
 
-Here are some keys to improve the performance of the C web server:
-
-* use sendfile() instead of read() the file and then write() to socket;
-* there is no need for a shared queue, nor an acceptor thread: each thread of the pool threads can call accept().
+One can define USE_SENDFILE in util.h in order to use the *sendfile()* system call instead of *read()* the file and then *write()* its content to the socket.
 
 
 How to compile and use the server
