@@ -24,30 +24,32 @@ fn main() {
    do task::spawn {
       loop {
          let (conn, kill_ch) = port.recv();
-         io::println("Going to accept a new connection");
-         match tcp::accept(conn) {
-            result::Err(err) => {
-               io::println(fmt!("Connection error: %?", err));
-               kill_ch.send(Some(err));
-            },
-            result::Ok(socket) => {
-               let peer_addr: ~str = ip::format_addr(&socket.get_peer_addr());
-               io::println(fmt!("Connection accepted from %s", peer_addr));
+         do task::spawn {
+            io::println("Going to accept a new connection");
+            match tcp::accept(conn) {
+               result::Err(err) => {
+                  io::println(fmt!("Connection error: %?", err));
+                  kill_ch.send(Some(err));
+               },
+               result::Ok(socket) => {
+                  let peer_addr: ~str = ip::format_addr(&socket.get_peer_addr());
+                  io::println(fmt!("Connection accepted from %s", peer_addr));
 
-               loop {
-                  let result = socket.read(0u);
-                  if result.is_err() {
-                     break;
-                  }
+                  loop {
+                     let result = socket.read(0u);
+                     if result.is_err() {
+                        break;
+                     }
 
-                  let c = result.get();
-                  io::println(fmt!("%?", c));
-                  let result = socket.write(c);
-                  if result.is_err() {
-                     break;
+                     let c = result.get();
+                     io::println(fmt!("%?", c));
+                     let result = socket.write(c);
+                     if result.is_err() {
+                        break;
+                     }
                   }
+                  io::println(fmt!("Connection closed from %s", peer_addr));
                }
-               io::println(fmt!("Connection closed from %s", peer_addr));
             }
          }
       }
