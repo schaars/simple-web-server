@@ -137,41 +137,44 @@ fn clientsuccess(socket: &tcp::TcpSocket, filename: &str, content: ~[u8]) {
    socket.write(content);
 }
 
-fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir: ~str) {
+fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir2: ~str) {
    // this is the task which accepts new connections
    do task::spawn{
       loop {
          let (conn, kill_ch) = port_endpoint.recv();
-         debug!("Going to accept a new connection");
-         match tcp::accept(conn) {
-            result::Err(err) => {
-               debug!(fmt!("Connection error: %?", err));
-               kill_ch.send(Some(err));
-            },
-            result::Ok(socket) => {
-               let peer_addr: ~str = ip::format_addr(&socket.get_peer_addr());
-               debug!(fmt!("Connection accepted from %s", peer_addr));
+         let web_dir: ~str = copy web_dir2;
+         do task::spawn {
+            debug!("Going to accept a new connection");
+            match tcp::accept(conn) {
+               result::Err(err) => {
+                  debug!(fmt!("Connection error: %?", err));
+                  kill_ch.send(Some(err));
+               },
+               result::Ok(socket) => {
+                  let peer_addr: ~str = ip::format_addr(&socket.get_peer_addr());
+                  debug!(fmt!("Connection accepted from %s", peer_addr));
 
-               let (request, code) = read_request(&socket);
-               if code == 0 {
-                  // FIXME: hacky
-                  let mut words = ~[];
-                  for str::each_word(request) |word| { words.push(word) }
+                  let (request, code) = read_request(&socket);
+                  if code == 0 {
+                     // FIXME: hacky
+                     let mut words = ~[];
+                     for str::each_word(request) |word| { words.push(word) }
 
-                  if words.len() < 3 {
-                     clienterror(&socket, request, StatusCode(400));
-                  } else if words[0] != ~"GET" {
-                     clienterror(&socket, request, StatusCode(501));
-                  // TODO: 1.1
-                  } else if words[2] != ~"HTTP/1.0" {
-                     clienterror(&socket, request, StatusCode(505));
-                  } else {
-                     let (content, code) = read_file(web_dir + words[1]);
-                     match code {
-                        200 => {clientsuccess(&socket, copy words[1], content);},
-                        404 => {clienterror(&socket, copy words[1], StatusCode(404));},
-                        401 => {clienterror(&socket, copy words[1], StatusCode(401));},
-                        _   => {fail!(fmt!("Unknown error code: %d", code));}
+                     if words.len() < 3 {
+                        clienterror(&socket, request, StatusCode(400));
+                     } else if words[0] != ~"GET" {
+                        clienterror(&socket, request, StatusCode(501));
+                     // TODO: 1.1
+                     } else if words[2] != ~"HTTP/1.0" {
+                        clienterror(&socket, request, StatusCode(505));
+                     } else {
+                        let (content, code) = read_file(web_dir + words[1]);
+                        match code {
+                           200 => {clientsuccess(&socket, copy words[1], content);},
+                           404 => {clienterror(&socket, copy words[1], StatusCode(404));},
+                           401 => {clienterror(&socket, copy words[1], StatusCode(401));},
+                           _   => {fail!(fmt!("Unknown error code: %d", code));}
+                        }
                      }
                   }
                }
