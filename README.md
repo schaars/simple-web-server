@@ -23,7 +23,8 @@ The source code is organized in the following files:
 * echo_server.rs: a simple echo server in TCP.
 * ws.rs: the simple web server
 
-For now there is only 1 task to accept client connections. Moreover, the server does not make the difference between "file not found" and "not authorized": it returns a 404 error in both cases.
+The server accepts several simultaneous connections: it spawns a new task for each accept. The *pool_size* argument has no effect.
+Moreover, the server does not make the difference between "file not found" and "not authorized": it returns a 404 error in both cases.
 
 
 C implementation
