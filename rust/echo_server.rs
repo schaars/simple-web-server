@@ -7,14 +7,18 @@
  *   -http://alexanderjbuck.blogspot.fr/2013/01/writing-tcp-server-client-in-rust.html
  */
 
-extern mod std;
-use std::net::tcp;
-use std::net::ip;
-use std::task;
-use std::uv;
-use core::comm::{stream, Port, SharedChan};
+extern mod extra;
 
-type ConnectMsg = (tcp::TcpNewConnection, SharedChan<Option<tcp::TcpErrData>>);
+use extra::comm::{stream, Port};
+use extra::net::ip;
+use extra::net::tcp;
+use extra::uv;
+use std::comm;
+use std::io;
+use std::result;
+use std::task;
+
+type ConnectMsg = (tcp::TcpNewConnection, comm::SharedChan<Option<tcp::TcpErrData>>);
 
 fn main() {
    //Connection information will be transmitted using this Port and Chan
