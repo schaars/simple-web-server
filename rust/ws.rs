@@ -3,12 +3,20 @@
  * For now, the pool_size argument is not used: there is at most only
  * one client at a time.
  */
-extern mod std;
-use std::getopts::*;
-use std::net::tcp;
-use std::net::ip;
+
+extern mod extra;
+
+use extra::getopts::*;
+use extra::net::ip;
+use extra::net::tcp;
+use extra::uv;
+use std::comm;
+use std::io;
+use std::os;
+use std::result;
+use std::str;
 use std::task;
-use std::uv;
+use std::uint;
 
 use StatusCodes::StatusCode;
 mod StatusCodes {
@@ -36,7 +44,7 @@ mod StatusCodes {
 }
 
 // TODO: investigate core::unstable::Exclusive
-type ConnectMsg = (tcp::TcpNewConnection, core::unstable::Exclusive<core::comm::Chan<Option<tcp::TcpErrData>>>);
+type ConnectMsg = (tcp::TcpNewConnection, comm::SharedChan<Option<tcp::TcpErrData>>);
 
 fn print_usage(program: ~str) {
    fail!(fmt!("Usage: %s -p port -s pool_size -d web_dir", program));
@@ -49,7 +57,7 @@ fn parse_arguments_with_getopts(args: ~[~str]) -> (uint, uint, ~str) {
       optopt("s"),
       optopt("d")
    ];
-   let matches = match getopts(vec::tail(args), opts) {
+   let matches = match getopts(args.tail(), opts) {
       result::Ok(m) => { m }
       result::Err(f) => {fail!(fail_str(f));}
    };
@@ -91,8 +99,8 @@ fn read_request(socket: &tcp::TcpSocket) -> (~str, uint) {
          return (req, 1);
       }
 
-      req += str::from_bytes(result.get());
-      if str::contains(req, "\n") {
+      req = req + str::from_bytes(result.get());
+      if req.contains("\n") {
          return (req, 0);
       }
    }
@@ -107,19 +115,19 @@ fn clienterror(socket: &tcp::TcpSocket, cause: &str, errorcode: StatusCodes::Sta
    let body = ~"<html><title>Simple Web Server Error</title><body bgcolor=\"ffffff\">\r\n"
       + fmt!("%s: %s\r\n", errnum, shortmsg)
       + fmt!("<p>%s: %s</p>\r\n", longmsg, cause)
-      + ~"<hr><em>The Simple Web Server</em>\r\n"; 
-   let header = fmt!("HTTP/1.0 %s %s\r\n", errnum, shortmsg) + ~"Content-type: text/html\r\n" + fmt!("Content-length: %u\r\n\r\n", body.len());
+      + "<hr><em>The Simple Web Server</em>\r\n"; 
+   let header = fmt!("HTTP/1.0 %s %s\r\n", errnum, shortmsg) + "Content-type: text/html\r\n" + fmt!("Content-length: %u\r\n\r\n", body.len());
 
-   socket.write(header.to_bytes());
-   socket.write(body.to_bytes());
+   socket.write(header.as_bytes().to_owned());
+   socket.write(body.as_bytes().to_owned());
 }
 
 fn get_file_type(filename: &str) -> ~str {
-   if filename.ends_with(~".html") {
+   if filename.ends_with(".html") {
       ~"text/html"
-   } else if filename.ends_with(~".gif") {
+   } else if filename.ends_with(".gif") {
       ~"image/gif"
-   } else if filename.ends_with(~".jpg") {
+   } else if filename.ends_with(".jpg") {
       ~"image/jpeg"
    } else {
       ~"text/plain"
@@ -133,7 +141,7 @@ fn clientsuccess(socket: &tcp::TcpSocket, filename: &str, content: ~[u8]) {
       +fmt!("Content-length: %u\r\n", content.len())
       +fmt!("Content-type: %s\r\n\r\n", filetype);
 
-   socket.write(header.to_bytes());
+   socket.write(header.as_bytes().to_owned());
    socket.write(content);
 }
 
@@ -157,15 +165,14 @@ fn handle_connection(port_endpoint: ~Port<ConnectMsg>, web_dir2: ~str) {
                   let (request, code) = read_request(&socket);
                   if code == 0 {
                      // FIXME: hacky
-                     let mut words = ~[];
-                     for str::each_word(request) |word| { words.push(word) }
+                     let words: ~[&str] = request.word_iter().collect();
 
                      if words.len() < 3 {
                         clienterror(&socket, request, StatusCode(400));
-                     } else if words[0] != ~"GET" {
+                     } else if words[0] != "GET" {
                         clienterror(&socket, request, StatusCode(501));
                      // TODO: 1.1
-                     } else if words[2] != ~"HTTP/1.0" {
+                     } else if words[2] != "HTTP/1.0" {
                         clienterror(&socket, request, StatusCode(505));
                      } else {
                         let (content, code) = read_file(web_dir + words[1]);

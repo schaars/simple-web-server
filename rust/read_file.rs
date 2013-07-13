@@ -3,6 +3,9 @@
  * Future work: as a variant, we may use the C bindings to call mmap/munmap
  */
 
+use std::io;
+use std::result;
+
 /* read the file path by calling the read_whole_file_str function */
 fn read_file_whole(path: ~str) -> ~str {
    let res = io::read_whole_file_str(&Path(path));
@@ -27,7 +30,7 @@ fn read_file_lines(path: ~str) -> ~str {
          break;
       }
       // read_line does not return the '\n', so we add it
-      content += line + ~"\n";
+      content = content + line + "\n";
    }
 
    content
@@ -37,5 +40,5 @@ fn main() {
    let filename = ~"read_file.rs";
    //let content = read_file_whole(copy filename);
    let content = read_file_lines(copy filename);
-   io::println(~"the content of " + filename + ~" is [\n" + content + ~"]");
+   io::println("the content of " + filename + " is [\n" + content + "]");
 }
