@@ -1,8 +1,14 @@
 /*
  * How to get and parse the arguments on the command line 
  */
-extern mod std;
-use std::getopts::*;
+
+extern mod extra;
+
+use extra::getopts::*;
+use std::int;
+use std::io;
+use std::os;
+use std::result;
 
 fn print_usage(program: ~str) {
    fail!(fmt!("Usage: %s -p port -s pool_size -d web_dir", program));
@@ -41,7 +47,7 @@ fn parse_arguments_with_getopts(args: ~[~str]) -> (int, int, ~str) {
       optopt("s"),
       optopt("d")
    ];
-   let matches = match getopts(vec::tail(args), opts) {
+   let matches = match getopts(args.tail(), opts) {
       result::Ok(m) => { m }
       result::Err(f) => { fail!(fail_str(f)) }
    };

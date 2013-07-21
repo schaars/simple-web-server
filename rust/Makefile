@@ -16,6 +16,6 @@ echo_server: echo_server.rs
 	$(C) $(CFLAGS) -o $@ $^
 
 clean:
-	-rm *~
-	-rm ws parse_arguments read_file echo_server
-	-rm -r *.dSYM
+	-rm -f *~
+	-rm -f ws parse_arguments read_file echo_server
+	-rm -f -r *.dSYM
